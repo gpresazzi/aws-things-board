@@ -2,12 +2,13 @@
     "Parameters": {
         "commands": [
             "#!/bin/bash",
-            "sudo yum -y update",
+            "set -e",
+            "docker info",
             "cd /home/ec2-user",
             "mkdir -p /home/ec2-user/.mytb-data && sudo chown -R 799:799 /home/ec2-user/.mytb-data",
             "mkdir -p /home/ec2-user/.mytb-logs && sudo chown -R 799:799 /home/ec2-user/.mytb-logs",
             "su - ec2-user",
-            "docker run -p 80:9090 -p 1883:1883 -p 5683:5683/udp -v /home/ec2-user/.mytb-data:/data -v /home/ec2-user/.mytb-logs:/var/log/thingsboard --name mytb --restart always thingsboard/tb-postgres",
+            "docker run -d -p 80:9090 -p 1883:1883 -p 5683:5683/udp -v /home/ec2-user/.mytb-data:/data -v /home/ec2-user/.mytb-logs:/var/log/thingsboard --name mytb --restart always thingsboard/tb-postgres",
             "git clone https://github.com/gpresazzi/aws-things-board.git",
             "/home/ec2-user/aws-things-board/duck.sh &"
         ]

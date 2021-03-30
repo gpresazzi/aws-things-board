@@ -15,6 +15,9 @@ Parameters:
   InstanceName:
     Type: String
     Default: instance-server
+  InstanceRole:
+    Type: String
+    Default: ec2-simple-role
 
   # Subnets
   VPCSubnetCidrBlock:
@@ -26,6 +29,13 @@ Parameters:
     AllowedPattern: "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
 
 Resources:
+  MyInstanceProfile: 
+    Type: "AWS::IAM::InstanceProfile"
+    Properties: 
+      Path: "/"
+      Roles: 
+        - 
+          !Ref InstanceRole
   MyEC2Instance: 
     Type: AWS::EC2::Instance
     DependsOn: VPCGatewayAttachment
@@ -34,6 +44,7 @@ Resources:
       KeyName: !Ref KeyPairName
       InstanceType: t3.large
       SubnetId: !Ref SubnetA
+      IamInstanceProfile: !Ref MyInstanceProfile
       Tags:
       - Key: Name
         Value: !Ref InstanceName
@@ -55,14 +66,15 @@ Resources:
             yum update -y
             cd /tmp
             touch step0.log
-            sudo yum install -y https://s3.region.amazonaws.com/amazon-ssm-region/latest/linux_amd64/amazon-ssm-agent.rpm
+            yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+            systemctl status amazon-ssm-agent
             touch step1.log
-            sudo yum install -y git
+            yum install -y git
             touch step2.log
-            sudo amazon-linux-extras install docker
-            sudo service docker start
-            sudo systemctl enable docker.service
-            sudo usermod -a -G docker ec2-user
+            amazon-linux-extras install docker
+            service docker start
+            systemctl enable docker.service
+            usermod -a -G docker ec2-user
             touch step3.log
             mkdir -p /tmp/development
   VPC:

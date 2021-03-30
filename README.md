@@ -9,11 +9,12 @@ This package is used to build a basic AWS infrastructure with thingsboard.io dep
 
 ## Execute
 
+To create the AWS stack (single EC2 instance in VPC public reachable)
 ```bash
-./deploy.sh
+./deploy.sh create_stack
 ```
 
-This script execute the following steps:
-
-1 - Create the infrastructure (single EC2 instance in VPC public reachable)
-2 - Run a command to initialize the host
+Run a command to initialize the host with docker container
+```bash
+./deploy.sh init_instance
+```
