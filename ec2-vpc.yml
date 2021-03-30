@@ -1,0 +1,146 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Create a VPC Giulio Presazzi v20161125-1430
+
+Parameters:
+  # Ownership
+  Owner:
+    Type: String
+    Default: Giulio Presazzi
+  Project:
+    Type: String
+    Default: My VPC
+  KeyPairName:
+    Type: String
+    Default: ec2-instance
+  InstanceName:
+    Type: String
+    Default: instance-server
+
+  # Subnets
+  VPCSubnetCidrBlock:
+    Description: 10.0.0.0/16 = 10.0.0.0-10.0.255.255 = 256 Subnets = 65534 hosts
+    Type: String
+    Default: 10.0.0.0/16
+    MinLength: '10'
+    MaxLength: '18'
+    AllowedPattern: "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+
+Resources:
+  MyEC2Instance: 
+    Type: AWS::EC2::Instance
+    DependsOn: VPCGatewayAttachment
+    Properties: 
+      ImageId: "ami-0d712b3e6e1f798ef"
+      KeyName: !Ref KeyPairName
+      InstanceType: t3.large
+      SubnetId: !Ref SubnetA
+      Tags:
+      - Key: Name
+        Value: !Ref InstanceName
+      SecurityGroupIds:
+        - Ref: InstanceSecurityGroup
+      BlockDeviceMappings: 
+      - DeviceName: "/dev/sdm"
+        Ebs: 
+          VolumeType: "io1"
+          Iops: "200"
+          DeleteOnTermination: "false"
+          VolumeSize: "20"
+      - DeviceName: "/dev/sdk"
+        NoDevice: {}
+      UserData:
+        Fn::Base64: 
+          !Sub |
+            #!/bin/bash -xe
+            yum update -y
+            cd /tmp
+            touch step0.log
+            sudo yum install -y https://s3.region.amazonaws.com/amazon-ssm-region/latest/linux_amd64/amazon-ssm-agent.rpm
+            touch step1.log
+            #sudo amazon-linux-extras install nginx1 -y
+            #sudo service nginx start
+            #sudo systemctl enable nginx.service
+            touch step2.log
+            sudo amazon-linux-extras install docker
+            sudo service docker start
+            sudo systemctl enable docker.service
+            sudo usermod -a -G docker ec2-user
+            touch step3.log
+            mkdir -p /tmp/development
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+      CidrBlock: !Ref VPCSubnetCidrBlock
+      Tags:
+      - Key: Name
+        Value: !Ref "AWS::StackName"
+      - Key: Owner
+        Value: !Ref Owner
+      - Key: Project
+        Value: !Ref Project
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+  SubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: eu-west-1a
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.0.0/24
+      MapPublicIpOnLaunch: true
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+  InternetRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGateway
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref RouteTable
+  SubnetARouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref SubnetA
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: "http-open-security-group"
+      GroupDescription: "Grant access to htt ports"
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 1883
+          ToPort: 1883
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: udp
+          FromPort: 5683
+          ToPort: 5683
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
