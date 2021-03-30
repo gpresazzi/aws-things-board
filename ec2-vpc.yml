@@ -57,9 +57,6 @@ Resources:
             touch step0.log
             sudo yum install -y https://s3.region.amazonaws.com/amazon-ssm-region/latest/linux_amd64/amazon-ssm-agent.rpm
             touch step1.log
-            #sudo amazon-linux-extras install nginx1 -y
-            #sudo service nginx start
-            #sudo systemctl enable nginx.service
             touch step2.log
             sudo amazon-linux-extras install docker
             sudo service docker start
