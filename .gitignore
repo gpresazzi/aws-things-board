@@ -1,0 +1,4 @@
+/venv
+*.py.swp
+.DS_Store
+paho.mqtt.python/
